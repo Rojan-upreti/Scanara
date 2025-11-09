@@ -2,13 +2,14 @@ import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { db } from '../config/firebase-admin.js';
 import axios from 'axios';
-import git from 'isomorphic-git';
-import http from 'isomorphic-git/http/node/index.js';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
+const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -68,7 +69,7 @@ const router = express.Router();
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || 'Ov23li8MopFRrrDZukD9';
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || 'ea49fd5f5d3e78fe6b9c15471d17c188210d8736';
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'https://prodpush--scanaraai.us-east4.hosted.app/api/github/callback';
+const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost:5000/api/github/callback';
 
 /**
  * GET /api/github/auth
@@ -245,17 +246,10 @@ router.post('/clone', verifyToken, async (req, res) => {
     }
 
     try {
-      // Clone repository with isomorphic-git (no system git required)
-      console.log(`Cloning repository ${repoUrl} to ${tempDir}`);
-      await git.clone({
-        fs,
-        http,
-        dir: tempDir,
-        url: repoUrl,
-        singleBranch: true,
-        depth: 1,
-        onAuth: () => ({ username: accessToken }),
-      });
+      // Clone repository with token
+      // Format: https://token@github.com/owner/repo.git
+      const cloneUrl = repoUrl.replace('https://github.com/', `https://${accessToken}@github.com/`);
+      await execAsync(`git clone ${cloneUrl} .`, { cwd: tempDir });
 
       // Read all code files
       const codeFiles = [];

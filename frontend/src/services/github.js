@@ -1,6 +1,7 @@
 import { getCurrentToken } from './auth.js';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://prodpush--scanaraai.us-east4.hosted.app/';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 
 /**
  * Initiate GitHub OAuth flow

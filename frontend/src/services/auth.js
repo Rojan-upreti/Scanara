@@ -6,7 +6,8 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase.js';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://prodpush--scanaraai.us-east4.hosted.app/';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 
 /**
  * Sign in with email and password
