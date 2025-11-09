@@ -67,9 +67,16 @@ async function cleanupTempDir(dirPath) {
 
 const router = express.Router();
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || 'Ov23li8MopFRrrDZukD9';
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || 'ea49fd5f5d3e78fe6b9c15471d17c188210d8736';
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost:5000/api/github/callback';
+// GitHub OAuth credentials - configured via apphosting.yaml secrets
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI;
+
+// Validate required environment variables
+if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET || !GITHUB_REDIRECT_URI) {
+  console.error('ERROR: GitHub OAuth credentials not set in environment variables');
+  console.error('Required: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URI');
+}
 
 /**
  * GET /api/github/auth
