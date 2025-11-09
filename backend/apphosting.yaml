@@ -1,0 +1,16 @@
+runConfig:
+  # Environment variables for your backend
+  env:
+    - variable: NODE_ENV
+      value: production
+
+  # CPU and memory allocation
+  cpu: 1
+  memoryMiB: 512
+
+  # Minimum and maximum instances
+  minInstances: 0
+  maxInstances: 4
+
+  # Concurrency (requests per instance)
+  concurrency: 80
