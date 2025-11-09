@@ -12,468 +12,558 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
  * Create HIPAA compliance analysis prompt
  */
 function createHIPAAAnalysisPrompt(codebase, repoName = 'unknown') {
-  return `You are an automated HIPAA Compliance Auditor for codebases. Your job is to **scan the entire repository** (files under REPO_ROOT) and return a structured, evidence-backed HIPAA readiness report. You **must not** modify any files. You **must not** access or output any real Protected Health Information (PHI). If sample data or environment contains PHI, treat it as sensitive and redact it; replace with synthetic placeholders. Use only the code and configuration files available in the repository and any metadata the runtime provides (file paths, commit history, CI config). If you need to verify an uncertain external vendor or service, list it as "requires manual verification" and provide instructions on what to verify and where.
-
+  return `You are an automated HIPAA Compliance Auditor for codebases. Your job is to **scan the
+entire repository** (files under REPO_ROOT) and return a structured, evidence-backed HIPAA
+readiness report. You **must not** modify any files. You **must not** access or output any real
+Protected Health Information (PHI). If sample data or environment contains PHI, treat it as
+sensitive and redact it; replace with synthetic placeholders. Use only the code and configuration
+files available in the repository and any metadata the runtime provides (file paths, commit
+history, CI config). If you need to verify an uncertain external vendor or service, list it as
+&quot;requires manual verification&quot; and provide instructions on what to verify and where.
 SCOPE:
-
-- Scan: all source files, infra-as-code (Terraform/CloudFormation), Dockerfiles, CI/CD pipelines (GitHub Actions/GitLab/Bitbucket), config files (.env, .yml, .json), package manifests (package.json, requirements.txt, go.mod), infra config (aws/*.tf, azure/*.bicep), Kubernetes manifests, playbooks, and README/security docs.
-
+- Scan: all source files, infra-as-code (Terraform/CloudFormation), Dockerfiles, CI/CD pipelines
+(GitHub Actions/GitLab/Bitbucket), config files (.env, .yml, .json), package manifests
+(package.json, requirements.txt, go.mod), infra config (aws/*.tf, azure/*.bicep), Kubernetes
+manifests, playbooks, and README/security docs.
 - Exclude/ignore: /node_modules, /vendor, build artifacts, .git directories.
-
 - Do not attempt to decrypt secrets or fetch external systems.
-
 OBJECTIVES (order of priority):
-
 1. Identify PHI handling surfaces and classify them (ingest, store, transmit, display, log).
-
-2. Evaluate Technical Safeguards: encryption at rest/in transit, auth, RBAC, MFA, session management, logging, tamper-resistance.
-
-3. Evaluate Administrative Safeguards: documented policies, BAAs referenced in docs, training artifacts, role definitions, incident response artifacts.
-
-4. Evaluate Physical/Infrastructure Safeguards: hosting provider config, storage controls, backups, key management references.
-
-5. Evaluate DevOps & CI/CD: secrets in code, test data with PHI, environment segregation, automated scans, dependency vulnerabilities, deployment policies.
-
-6. Produce prioritized remediation items (code changes, infra changes, process changes), with severity (Critical/High/Medium/Low), exact file locations, recommended code snippets/commands, and estimated effort (in hours).
-
+2. Evaluate Technical Safeguards: encryption at rest/in transit, auth, RBAC, MFA, session
+management, logging, tamper-resistance.
+3. Evaluate Administrative Safeguards: documented policies, BAAs referenced in docs, training
+artifacts, role definitions, incident response artifacts.
+4. Evaluate Physical/Infrastructure Safeguards: hosting provider config, storage controls,
+backups, key management references.
+5. Evaluate DevOps &amp; CI/CD: secrets in code, test data with PHI, environment segregation,
+automated scans, dependency vulnerabilities, deployment policies.
+6. Produce prioritized remediation items (code changes, infra changes, process changes), with
+severity (Critical/High/Medium/Low), exact file locations, recommended code
+snippets/commands, and estimated effort (in hours).
 7. Output machine-readable JSON (schema below) and a human summary.
-
 CHECKLIST / RULES TO APPLY:
 
-- Encryption at rest: check database config, S3/EBS encryption flags, libs using encryption, KMS usage.
-
-- Encryption in transit: check HTTP endpoints, TLS enforcement in config, HSTS, secure cookie flags.
-
-- Auth: check for OAuth, password hashing (bcrypt/Argon2), MFA requirement for admin roles, role definitions in code.
-
-- Secrets: search for hardcoded secrets, API keys, private keys, .env files checked into repo, or credentials in CI logs.
-
-- Logging: search for console.log / print statements and structured logging that may include PHI fields; check log redaction patterns.
-
-- Data minimization & masking: check front-end templates/APIs for direct PHI exposure; check for use of identifiers vs PII.
-
+- Encryption at rest: check database config, S3/EBS encryption flags, libs using encryption,
+KMS usage.
+- Encryption in transit: check HTTP endpoints, TLS enforcement in config, HSTS, secure cookie
+flags.
+- Auth: check for OAuth, password hashing (bcrypt/Argon2), MFA requirement for admin roles,
+role definitions in code.
+- Secrets: search for hardcoded secrets, API keys, private keys, .env files checked into repo, or
+credentials in CI logs.
+- Logging: search for console.log / print statements and structured logging that may include PHI
+fields; check log redaction patterns.
+- Data minimization &amp; masking: check front-end templates/APIs for direct PHI exposure; check
+for use of identifiers vs PII.
 - Audit logging: ensure access events are logged with user id, timestamp, action, resource.
-
-- BAAs: search docs for vendor names (AWS, GCP, Twilio, SendGrid, Stripe, Okta) and whether repo has references to BAAs or privacy/terms docs. If vendor used and no BAA reference, flag.
-
-- Backups & retention: look for backup config or lifecycle rules; retention policy notes.
-
-- CI/CD: check for pipeline steps that publish artifacts to public repos, deploy from unreviewed branches, or run tests with production credentials.
-
-- Third-party dependencies: list direct deps and flag those with known security issues (report package name & version — do not fetch external vulnerability DB; provide commands to run e.g., \`npm audit\`, \`pip-audit\`).
-
-- Tests & environments: flag usage of production DB in tests or staging using real data. Ensure non-production environments use synthetic data.
-
-- Infrastructure isolation: check network/security group references (open 0.0.0.0/0 on DB ports), public S3 buckets, and unauthenticated API endpoints.
-
+- BAAs: search docs for vendor names (AWS, GCP, Twilio, SendGrid, Stripe, Okta) and
+whether repo has references to BAAs or privacy/terms docs. If vendor used and no BAA
+reference, flag.
+- Backups &amp; retention: look for backup config or lifecycle rules; retention policy notes.
+- CI/CD: check for pipeline steps that publish artifacts to public repos, deploy from unreviewed
+branches, or run tests with production credentials.
+- Third-party dependencies: list direct deps and flag those with known security issues (report
+package name &amp; version — do not fetch external vulnerability DB; provide commands to run
+e.g., \`npm audit\`, \`pip-audit\`).
+- Tests &amp; environments: flag usage of production DB in tests or staging using real data. Ensure
+non-production environments use synthetic data.
+- Infrastructure isolation: check network/security group references (open 0.0.0.0/0 on DB ports),
+public S3 buckets, and unauthenticated API endpoints.
 - Tamper-resistance: identify WORM or immutability in logs/backups (if present).
-
-- Documentation: check for security policies, incident response, training docs. If missing, mark administrative gap.
+- Documentation: check for security policies, incident response, training docs. If missing, mark
+administrative gap.
 
 OUTPUT FORMAT:
-
-Return a JSON object exactly matching the schema below. After JSON output, provide a plain-language executive summary (≤ 300 words) and a prioritized remediation list with code/infra examples. For each evidence item include file path + line numbers or snippet references. For any vendor, include explicit "BAA required: yes/no/unknown" and what to do next.
-
+Return a JSON object exactly matching the schema below. After JSON output, provide a plain-
+language executive summary (≤ 300 words) and a prioritized remediation list with code/infra
+examples. For each evidence item include file path + line numbers or snippet references. For
+any vendor, include explicit &quot;BAA : yes/no/unknown&quot; and what to do next.
 SAFETY:
-
-- Redact any suspected PHI in your output. Represent redactions with the token "[REDACTED_PHI]". Do not print real SSNs, phone numbers, names or medical records.
-
+- Redact any suspected PHI in your output. Represent redactions with the token
+&quot;[REDACTED_PHI]&quot;. Do not print real SSNs, phone numbers, names or medical records.
 **Codebase to Analyze:**
-
 ${codebase}
-
 **IMPORTANT:** Return ONLY valid JSON matching this exact schema:
-
 {
-  "metadata": {
-    "repo": "${repoName}",
-    "scan_date": "${new Date().toISOString()}",
-    "scanned_by": "scanara-ai-v1"
-  },
-  "scores": {
-    "overall_score": 0.0,
-    "technical_safeguards_score": 0.0,
-    "administrative_safeguards_score": 0.0,
-    "physical_safeguards_score": 0.0,
-    "audit_coverage_score": 0.0,
-    "encryption_coverage_percent": 0.0
-  },
-  "summary": {
-    "top_issues_count": 0,
-    "critical": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0,
-    "top_3_findings": [
-      {
-        "title": "",
-        "severity": "",
-        "description": "",
-        "file_paths": [""],
-        "line_refs": [""],
-        "remediation": ""
-      }
-    ]
-  },
-  "detailed_findings": [
-    {
-      "id": "F-0001",
-      "category": "encryption_at_rest",
-      "severity": "critical",
-      "description": "",
-      "evidence": [
-        {"file": "", "line_start": 0, "line_end": 0, "snippet": ""}
-      ],
-      "recommended_fix": {
-        "type": "code/infra/process",
-        "patch_example": "",
-        "commands": [""],
-        "estimated_hours": 0.0
-      }
-    }
-  ],
-  "metrics": {
-    "mfa_coverage_percent": 0.0,
-    "rbac_coverage_percent": 0.0,
-    "secrets_in_code_count": 0,
-    "baas_coverage_percent": 0.0,
-    "log_redaction_coverage_percent": 0.0,
-    "immutable_logs_enabled": false,
-    "public_bucket_count": 0,
-    "tls_enforced": true,
-    "test_data_with_real_phi_count": 0,
-    "ci_secrets_exposed_count": 0,
-    "dependency_vulnerabilities_count": 0
-  },
-  "remediation_plan": [
-    {
-      "id": "R-0001",
-      "title": "Example fix",
-      "priority": "critical",
-      "steps": ["step1", "step2"],
-      "files_to_change": [""],
-      "estimated_hours": 2.5
-    }
-  ],
-  "actions_required": {
-    "manual_verification": [
-      {
-        "issue_id": "F-XXXX",
-        "action": "Verify BAA with SendGrid (or Paubox)",
-        "how_to_verify": "Check account management console, request signed BAA PDF, store copy in secure compliance folder"
-      }
-    ]
-  },
-  "component_analysis": {
-    "administrative_safeguards": {
-      "status": "compliant/non_compliant/partial",
-      "score": 0.0,
-      "components": [
-        {
-          "name": "HIPAA Compliance Officer",
-          "status": "compliant/non_compliant/not_found",
-          "description": "Brief description of compliance status",
-          "evidence": "What was found or missing",
-          "remediation": "How to fix if non-compliant",
-          "files": [""]
-        },
-        {
-          "name": "Employee Training",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Access Control Policy",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Risk Analysis & Management",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Incident Response Plan",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Business Associate Agreements",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Audit Policy",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Data Retention & Disposal Policy",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Security Management Process",
-          "status": "compliant/non_compliant/not_found",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        }
-      ]
-    },
-    "technical_safeguards": {
-      "status": "compliant/non_compliant/partial",
-      "score": 0.0,
-      "components": [
-        {
-          "name": "Encryption at Rest",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Encryption in Transit",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Unique User IDs",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Authentication",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Role-Based Access Control (RBAC)",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Multi-Factor Authentication (MFA)",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Audit Logging",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Data Integrity Verification",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Session Management",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Automatic Logout",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        }
-      ]
-    },
-    "physical_safeguards": {
-      "status": "compliant/non_compliant/partial",
-      "score": 0.0,
-      "components": [
-        {
-          "name": "Server Access Control",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Workstation Security",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Device & Media Control",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Backup Security",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        }
-      ]
-    },
-    "data_handling": {
-      "status": "compliant/non_compliant/partial",
-      "score": 0.0,
-      "components": [
-        {
-          "name": "PHI in Logs",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "PHI in URLs",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Input Sanitization",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Secrets Management",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        },
-        {
-          "name": "Dependency Security",
-          "status": "compliant/non_compliant/partial",
-          "description": "",
-          "evidence": "",
-          "remediation": "",
-          "files": [""]
-        }
-      ]
-    }
-  }
+&quot;metadata&quot;: {
+&quot;repo&quot;: &quot;${repoName}&quot;,
+&quot;scan_date&quot;: &quot;${new Date().toISOString()}&quot;,
+&quot;scanned_by&quot;: &quot;scanara-ai-v1&quot;
+},
+&quot;scores&quot;: {
+&quot;overall_score&quot;: 0.0,
+&quot;technical_safeguards_score&quot;: 0.0,
+&quot;administrative_safeguards_score&quot;: 0.0,
+&quot;physical_safeguards_score&quot;: 0.0,
+&quot;audit_coverage_score&quot;: 0.0,
+&quot;encryption_coverage_percent&quot;: 0.0
+},
+&quot;summary&quot;: {
+&quot;top_issues_count&quot;: 0,
+&quot;critical&quot;: 0,
+&quot;high&quot;: 0,
+&quot;medium&quot;: 0,
+&quot;low&quot;: 0,
+&quot;top_3_findings&quot;: [
+{
+&quot;title&quot;: &quot;&quot;,
+&quot;severity&quot;: &quot;&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;file_paths&quot;: [&quot;&quot;],
+
+&quot;line_refs&quot;: [&quot;&quot;],
+&quot;remediation&quot;: &quot;&quot;
+}
+]
+},
+&quot;detailed_findings&quot;: [
+{
+&quot;id&quot;: &quot;F-0001&quot;,
+&quot;category&quot;: &quot;encryption_at_rest&quot;,
+&quot;severity&quot;: &quot;critical&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: [
+{&quot;file&quot;: &quot;&quot;, &quot;line_start&quot;: 0, &quot;line_end&quot;: 0, &quot;snippet&quot;: &quot;&quot;}
+],
+&quot;recommended_fix&quot;: {
+&quot;type&quot;: &quot;code/infra/process&quot;,
+&quot;patch_example&quot;: &quot;&quot;,
+&quot;commands&quot;: [&quot;&quot;],
+&quot;estimated_hours&quot;: 0.0
+}
+}
+],
+&quot;metrics&quot;: {
+&quot;mfa_coverage_percent&quot;: 0.0,
+&quot;rbac_coverage_percent&quot;: 0.0,
+&quot;secrets_in_code_count&quot;: 0,
+&quot;baas_coverage_percent&quot;: 0.0,
+&quot;log_redaction_coverage_percent&quot;: 0.0,
+&quot;immutable_logs_enabled&quot;: false,
+&quot;public_bucket_count&quot;: 0,
+&quot;tls_enforced&quot;: true,
+&quot;test_data_with_real_phi_count&quot;: 0,
+&quot;ci_secrets_exposed_count&quot;: 0,
+&quot;dependency_vulnerabilities_count&quot;: 0
+},
+&quot;remediation_plan&quot;: [
+{
+&quot;id&quot;: &quot;R-0001&quot;,
+&quot;title&quot;: &quot;Example fix&quot;,
+&quot;priority&quot;: &quot;critical&quot;,
+&quot;steps&quot;: [&quot;step1&quot;, &quot;step2&quot;],
+&quot;files_to_change&quot;: [&quot;&quot;],
+&quot;estimated_hours&quot;: 2.5
 }
 
+],
+&quot;actions_&quot;: {
+&quot;manual_verification&quot;: [
+{
+&quot;issue_id&quot;: &quot;F-XXXX&quot;,
+&quot;action&quot;: &quot;Verify BAA with SendGrid (or Paubox)&quot;,
+&quot;how_to_verify&quot;: &quot;Check account management console, request signed BAA PDF, store
+copy in secure compliance folder&quot;
+}
+]
+},
+&quot;component_analysis&quot;: {
+&quot;administrative_safeguards&quot;: {
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;score&quot;: 0.0,
+&quot;components&quot;: [
+{
+&quot;name&quot;: &quot;HIPAA Compliance Officer&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;Brief description of compliance status&quot;,
+&quot;evidence&quot;: &quot;What was found or missing&quot;,
+&quot;remediation&quot;: &quot;How to fix if non-compliant&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Employee Training&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Access Control Policy&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Risk Analysis &amp; Management&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Incident Response Plan&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Business Associate Agreements&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Audit Policy&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Data Retention &amp; Disposal Policy&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Security Management Process&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/not_found&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+}
+
+]
+},
+&quot;technical_safeguards&quot;: {
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;score&quot;: 0.0,
+&quot;components&quot;: [
+{
+&quot;name&quot;: &quot;Encryption at Rest&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Encryption in Transit&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Unique User IDs&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Authentication&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Role-Based Access Control (RBAC)&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Multi-Factor Authentication (MFA)&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Audit Logging&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Data Integrity Verification&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Session Management&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Automatic Logout&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+}
+]
+},
+
+&quot;physical_safeguards&quot;: {
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;score&quot;: 0.0,
+&quot;components&quot;: [
+{
+&quot;name&quot;: &quot;Server Access Control&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Workstation Security&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Device &amp; Media Control&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Backup Security&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+}
+]
+},
+&quot;data_handling&quot;: {
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;score&quot;: 0.0,
+&quot;components&quot;: [
+{
+&quot;name&quot;: &quot;PHI in Logs&quot;,
+
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;PHI in URLs&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Input Sanitization&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Secrets Management&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+},
+{
+&quot;name&quot;: &quot;Dependency Security&quot;,
+&quot;status&quot;: &quot;compliant/non_compliant/partial&quot;,
+&quot;description&quot;: &quot;&quot;,
+&quot;evidence&quot;: &quot;&quot;,
+&quot;remediation&quot;: &quot;&quot;,
+&quot;files&quot;: [&quot;&quot;]
+}
+]
+}
+}
+}
 **Scoring Algorithm:**
+
 Overall Score (0–100) = weighted sum:
 - Technical Safeguards (45% of score)
 - Administrative Safeguards (30%)
 - Physical Safeguards (10%)
-- Audit & Logging Coverage (10%)
-- CI/CD & DevOps Hygiene (5%)
-
-Compute each subscore (0–100) from binary and continuous checks. Round scores to 1 decimal place.
-
+- Audit &amp; Logging Coverage (10%)
+- CI/CD &amp; DevOps Hygiene (5%)
+Compute each subscore (0–100) from binary and continuous checks. Round scores to 1
+decimal place.
 **CRITICAL: Component Analysis Requirement**
-You MUST provide a detailed component_analysis section that evaluates EACH individual HIPAA component:
+You MUST provide a detailed component_analysis section that evaluates EACH individual
+HIPAA component:
+1. **Administrative Safeguards** - Evaluate all 9 components and each sub-component:
+a. Security management process.
+I. Risk analysis
+II. Risk management
+III. Sanction policy
+IV. Information system activity review
+b. Assigned security responsibility.
+I. Identify the security official who is responsible for the development and
+implementation of the policies and procedures
 
-1. **Administrative Safeguards** - Evaluate all 9 components:
-   - HIPAA Compliance Officer (check for designation in docs/code)
-   - Employee Training (check for training logs, documentation)
-   - Access Control Policy (check for RBAC implementation)
-   - Risk Analysis & Management (check for risk assessment docs)
-   - Incident Response Plan (check for incident response documentation)
-   - Business Associate Agreements (check for BAA references)
-   - Audit Policy (check for audit logging implementation)
-   - Data Retention & Disposal Policy (check for retention policies)
-   - Security Management Process (check for security documentation)
+c. Workforce security.
+I. Authorization and/or supervision
+II. Workforce clearance procedure to determine that the access of a workforce
+member to electronic protected health information is appropriate.
+III. Termination procedures for terminating access to electronic protected health
+information when the employment of, or other arrangement with, a workforce
+member ends.
 
-2. **Technical Safeguards** - Evaluate all 10 components:
-   - Encryption at Rest (check database/config encryption)
-   - Encryption in Transit (check TLS/HTTPS enforcement)
-   - Unique User IDs (check for shared accounts)
-   - Authentication (check OAuth/JWT implementation)
-   - Role-Based Access Control (check RBAC implementation)
-   - Multi-Factor Authentication (check MFA requirements)
-   - Audit Logging (check for PHI access logging)
-   - Data Integrity Verification (check for hash verification)
-   - Session Management (check JWT expiration, CSRF)
-   - Automatic Logout (check session timeout)
+d. Information access management.
+I. Isolating health care clearinghouse functions: If a health care clearinghouse is
+part of a larger organization, check for policies and procedures that protect the
+electronic protected health information of the clearinghouse from unauthorized
+access by the larger organization.
+II. Access authorization for example, granting access to a workstation, transaction,
+program, process, or other mechanism.
+III. Access establishment and modification: based upon the covered entity&#39;s or the
+business associate&#39;s access authorization policies, establish, document, review,
+and modify a user&#39;s right of access to a workstation, transaction, program, or
+process.
 
-3. **Physical Safeguards** - Evaluate all 4 components:
-   - Server Access Control (check cloud provider config)
-   - Workstation Security (check endpoint security)
-   - Device & Media Control (check removable storage policies)
-   - Backup Security (check backup encryption)
+e. Security awareness and training.
+I. Security reminders
+II. Protection from malicious software
+
+III. Log-in monitoring
+IV. Password management
+f. Security incident procedures.
+I. Response and reporting
+g. Contingency plan
+I. Data backup plan
+II. Disaster recovery plan
+III. Emergency mode operation plan
+IV. Testing and revision procedures
+V. Applications and data criticality analysis
+h. Evaluation
+I. Periodic technical and nontechnical evaluation
+i. Business associate contracts and other arrangements
+I. Written contract or other arrangement included
+
+2. **Technical Safeguards** - Evaluate all 5 components and subcomponents:
+a. Strategy: Access control:
+I. Unique user identification . Check for a unique name and/or number for identifying
+and tracking user identity.
+II. Emergency access procedure . Procedures for obtaining necessary electronic
+protected health information during an emergency.
+III. Automatic logoff . Procedures electronic procedures that terminate an electronic
+session after a predetermined time of inactivity.
+IV. Encryption and decryption . Mechanisms to encrypt and decrypt electronic protected
+health information.
+b. Strategy: Audit controls.
+I. Hardware, software, and/or procedural mechanisms that record and examine
+activity in information systems that contain or use electronic protected health
+information.
+c. Strategy: Integrity.
+I. Mechanism to authenticate electronic protected health information: electronic
+mechanisms to corroborate that electronic protected health information has not
+been altered or destroyed in an unauthorized manner.
+
+d. Strategy: Person or entity authentication
+e. Strategy: Transmission security
+
+I. Integrity controls: security measures to ensure that electronically transmitted
+electronic protected health information is not improperly modified without
+detection until disposed of.
+II. Encryption: a mechanism to encrypt electronic protected health information
+whenever deemed appropriate.
+
+3. **Physical Safeguards** - Evaluate all 4 components and sub-components:
+A. Standard: Facility access controls
+I. Contingency operations: Procedures that allow facility access in support of
+restoration of lost data under the disaster recovery plan and emergency mode
+operations plan in the event of an emergency.
+II. Facility security plan: Policies and procedures to safeguard the facility and the
+equipment therein from unauthorized physical access, tampering, and theft.
+III. Access control and validation procedures
+IV. Maintenance records
+B. Standard: Workstation use.
+
+I. Policies and procedures that specify the proper functions to be performed, the
+manner in which those functions are to be performed, and the physical attributes
+of the surroundings of a specific workstation or class of workstation that can
+access electronic protected health information.
+
+C. Standard: Workstation security.
+
+I. Physical safeguards for all workstations that access electronic protected health
+information to restrict access to authorized users.
+
+D. Standard: Device and media controls.
+
+I. Disposal: Policies and procedures to address the final disposition of electronic
+protected health information, and/or the hardware or electronic media on which it
+is stored.
+II. Media re-use: Procedures for the removal of electronic protected health
+information from electronic media before the media are made available for re-
+use.
+III. Accountability: Maintenance of a record of the movements of hardware and
+electronic media and any person responsible therefore.
+IV. Data backup and storage. A retrievable, exact copy of electronic protected health
+information, when needed, before the movement of equipment.
 
 4. **Data Handling** - Evaluate all 5 components:
-   - PHI in Logs (check for PHI in console.log/print)
-   - PHI in URLs (check for PHI exposure in URLs)
-   - Input Sanitization (check XSS/SQL injection prevention)
-   - Secrets Management (check for hardcoded secrets)
-   - Dependency Security (check for vulnerable dependencies)
+- PHI in Logs (check for PHI in console.log/print)
 
+- PHI in URLs (check for PHI exposure in URLs)
+- Input Sanitization (check XSS/SQL injection prevention)
+- Secrets Management (check for hardcoded secrets)
+- Dependency Security (check for vulnerable dependencies)
 For EACH component, provide:
-- status: "compliant" if fully compliant, "partial" if partially compliant, "non_compliant" or "not_found" if missing
+- status: &quot;compliant&quot; if fully compliant, &quot;partial&quot; if partially compliant, &quot;non_compliant&quot; or
+&quot;not_found&quot; if missing
 - description: Brief explanation of current state
-- evidence: What was found in the codebase (or what's missing)
-- remediation: Step-by-step instructions on how to fix if non-compliant
+- evidence: What was found in the codebase (or what&#39;s missing)
+- remediation: Step-by-step instructions on how to fix if non-compliant according to the checklist
+above
 - files: Array of file paths where issues were found or where fixes should be applied
-
-Provide a comprehensive analysis focusing on actionable, specific issues with exact file paths and line numbers.`;
-}
+Provide a comprehensive analysis focusing on actionable, specific issues with exact file paths
+and line numbers.`}
 
 /**
  * POST /api/audit/run

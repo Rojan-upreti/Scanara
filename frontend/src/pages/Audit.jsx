@@ -127,21 +127,6 @@ const Audit = () => {
   // Default component structure if not provided by backend
   const getDefaultComponentAnalysis = () => {
     return {
-      administrative_safeguards: {
-        status: 'non_compliant',
-        score: 0,
-        components: [
-          { name: 'HIPAA Compliance Officer', status: 'not_found', description: 'No compliance officer designation found', evidence: 'No documentation found', remediation: 'Designate a HIPAA Compliance Officer and document their role in your organization.', files: [] },
-          { name: 'Employee Training', status: 'not_found', description: 'No training documentation found', evidence: 'No training logs or documentation found', remediation: 'Implement employee training program and maintain signed training logs for all staff who access PHI.', files: [] },
-          { name: 'Access Control Policy', status: 'not_found', description: 'No access control policy found', evidence: 'No RBAC implementation or policy documentation found', remediation: 'Define user roles (patient, doctor, admin) and implement least-privilege access rules in code.', files: [] },
-          { name: 'Risk Analysis & Management', status: 'not_found', description: 'No risk analysis found', evidence: 'No risk assessment documentation found', remediation: 'Conduct periodic risk assessments of system vulnerabilities and document results with mitigation plans.', files: [] },
-          { name: 'Incident Response Plan', status: 'not_found', description: 'No incident response plan found', evidence: 'No incident response documentation found', remediation: 'Create written incident response plan with steps for handling data breaches, unauthorized access, or loss. Include team contact list.', files: [] },
-          { name: 'Business Associate Agreements', status: 'not_found', description: 'No BAA references found', evidence: 'No BAA documentation found for third-party vendors', remediation: 'Obtain signed BAAs from all third-party vendors who handle PHI (e.g., AWS, Twilio, SendGrid). Store copies securely.', files: [] },
-          { name: 'Audit Policy', status: 'not_found', description: 'No audit policy found', evidence: 'No audit logging policy found', remediation: 'Implement audit logging for PHI access and changes. Maintain system-level and database audit logs.', files: [] },
-          { name: 'Data Retention & Disposal Policy', status: 'not_found', description: 'No retention policy found', evidence: 'No data retention or disposal policy found', remediation: 'Define how long PHI is kept and securely deleted. Implement scheduled automatic purging and encryption key rotation.', files: [] },
-          { name: 'Security Management Process', status: 'not_found', description: 'No security management plan found', evidence: 'No security management documentation found', remediation: 'Implement a written security management plan and store policies in internal documentation.', files: [] }
-        ]
-      },
       technical_safeguards: {
         status: 'non_compliant',
         score: 0,
@@ -177,6 +162,21 @@ const Audit = () => {
           { name: 'Input Sanitization', status: 'not_found', description: 'Input sanitization may be insufficient', evidence: 'No input sanitization found', remediation: 'Sanitize all inputs to prevent XSS/SQL injection. Use libraries like DOMPurify for XSS and parameterized queries for SQL injection.', files: [] },
           { name: 'Secrets Management', status: 'not_found', description: 'Secrets may be hardcoded', evidence: 'Hardcoded secrets or API keys found', remediation: 'Use environment variables for all secrets. Never hardcode API keys, passwords, or private keys. Use secret management services.', files: [] },
           { name: 'Dependency Security', status: 'not_found', description: 'Vulnerable dependencies may exist', evidence: 'No dependency security scanning found', remediation: 'Regularly run npm audit, pip-audit, or similar tools. Update vulnerable dependencies and use secure dependency management.', files: [] }
+        ]
+      },
+      administrative_safeguards: {
+        status: 'non_compliant',
+        score: 0,
+        components: [
+          { name: 'HIPAA Compliance Officer', status: 'not_found', description: 'No compliance officer designation found', evidence: 'No documentation found', remediation: 'Designate a HIPAA Compliance Officer and document their role in your organization.', files: [] },
+          { name: 'Employee Training', status: 'not_found', description: 'No training documentation found', evidence: 'No training logs or documentation found', remediation: 'Implement employee training program and maintain signed training logs for all staff who access PHI.', files: [] },
+          { name: 'Access Control Policy', status: 'not_found', description: 'No access control policy found', evidence: 'No RBAC implementation or policy documentation found', remediation: 'Define user roles (patient, doctor, admin) and implement least-privilege access rules in code.', files: [] },
+          { name: 'Risk Analysis & Management', status: 'not_found', description: 'No risk analysis found', evidence: 'No risk assessment documentation found', remediation: 'Conduct periodic risk assessments of system vulnerabilities and document results with mitigation plans.', files: [] },
+          { name: 'Incident Response Plan', status: 'not_found', description: 'No incident response plan found', evidence: 'No incident response documentation found', remediation: 'Create written incident response plan with steps for handling data breaches, unauthorized access, or loss. Include team contact list.', files: [] },
+          { name: 'Business Associate Agreements', status: 'not_found', description: 'No BAA references found', evidence: 'No BAA documentation found for third-party vendors', remediation: 'Obtain signed BAAs from all third-party vendors who handle PHI (e.g., AWS, Twilio, SendGrid). Store copies securely.', files: [] },
+          { name: 'Audit Policy', status: 'not_found', description: 'No audit policy found', evidence: 'No audit logging policy found', remediation: 'Implement audit logging for PHI access and changes. Maintain system-level and database audit logs.', files: [] },
+          { name: 'Data Retention & Disposal Policy', status: 'not_found', description: 'No retention policy found', evidence: 'No data retention or disposal policy found', remediation: 'Define how long PHI is kept and securely deleted. Implement scheduled automatic purging and encryption key rotation.', files: [] },
+          { name: 'Security Management Process', status: 'not_found', description: 'No security management plan found', evidence: 'No security management documentation found', remediation: 'Implement a written security management plan and store policies in internal documentation.', files: [] }
         ]
       }
     };
