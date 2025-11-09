@@ -1,17 +1,16 @@
 // src/config.js
 
 // Toggle this for local vs production testing
-const USE_LOCAL_BACK = false;
-const USE_LOCAL_FRONT = true;
+const USE_LOCAL = true;
 
 const config = {
     // API URLs
-    apiUrl: USE_LOCAL_BACK 
+    apiUrl: USE_LOCAL 
         ? 'http://localhost:5000'
-        : 'https://prodpush--scanaraai.us-east4.hosted.app/',
+        : 'https://testingbackend--rnglab3303.us-east4.hosted.app',
     
     // Web dashboard URL
-    webUrl: USE_LOCAL_FRONT
+    webUrl: USE_LOCAL
         ? 'http://localhost:5173'
         : 'https://your-web-app-url.com',
     
