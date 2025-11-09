@@ -63,7 +63,7 @@ class AuthManager {
 
         // Verify token with backend
         const verifyResponse = await fetch(
-            'https://testingbackend--rnglab3303.us-east4.hosted.app/api/auth/verify',
+            'https://prodpush--scanaraai.us-east4.hosted.app/api/auth/verify',
             {
                 method: 'POST',
                 headers: {
@@ -106,7 +106,7 @@ class AuthManager {
         // If expired, refresh it
         try {
             const verifyResponse = await fetch(
-                'https://testingbackend--rnglab3303.us-east4.hosted.app/api/auth/check',
+                'https://prodpush--scanaraai.us-east4.hosted.app/api/auth/check',
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
