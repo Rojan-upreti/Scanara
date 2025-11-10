@@ -1,3 +1,5 @@
+<img width="2934" height="1596" alt="image" src="https://github.com/user-attachments/assets/58d08d36-4bdf-4e0f-9aef-34c831ed1aa8" />
+
 # Firebase Authentication Backend & Frontend
 
 A complete authentication system with Node.js/Express backend and React frontend using Firebase Authentication.
@@ -134,4 +136,5 @@ frontend/
   ├── package.json
   └── vite.config.js
 ```
+
 
